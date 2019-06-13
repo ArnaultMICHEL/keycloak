@@ -22,6 +22,7 @@ import java.security.cert.X509Certificate;
 
 import javax.ws.rs.core.Response;
 
+import org.jboss.logging.Logger;
 import org.keycloak.authentication.AuthenticationFlowContext;
 import org.keycloak.authentication.AuthenticationFlowError;
 import org.keycloak.authentication.authenticators.browser.AbstractUsernameFormAuthenticator;
@@ -39,7 +40,7 @@ import org.keycloak.services.ServicesLogger;
 
 public class ValidateX509CertificateUsername extends AbstractX509ClientCertificateDirectGrantAuthenticator {
 
-    protected static ServicesLogger logger = ServicesLogger.LOGGER;
+    protected static Logger logger = Logger.getLogger(ValidateX509CertificateUsername.class);
 
     @Override
     public void authenticate(AuthenticationFlowContext context) {
@@ -69,8 +70,8 @@ public class ValidateX509CertificateUsername extends AbstractX509ClientCertifica
         }
         // Validate X509 client certificate
         try {
-            CertificateValidator.CertificateValidatorBuilder builder = certificateValidationParameters(config);
-            CertificateValidator validator = builder.build(certs);
+            CertificateValidator.CertificateValidatorBuilder builder = certificateValidationParameters(config,context);
+            CertificateValidator validator = builder.build(certs,context);
             validator.checkRevocationStatus()
                     .validateKeyUsage()
                     .validateExtendedKeyUsage();
@@ -99,7 +100,7 @@ public class ValidateX509CertificateUsername extends AbstractX509ClientCertifica
             user = getUserIdentityToModelMapper(config).find(context, userIdentity);
         }
         catch(ModelDuplicateException e) {
-            logger.modelDuplicateException(e);
+        	ServicesLogger.LOGGER.modelDuplicateException(e);
             String errorMessage = String.format("X509 certificate authentication's failed. Reason: \"%s\"", e.getMessage());
             Response challengeResponse = errorResponse(Response.Status.UNAUTHORIZED.getStatusCode(), "invalid_request", errorMessage);
             context.failure(AuthenticationFlowError.INVALID_USER, challengeResponse);

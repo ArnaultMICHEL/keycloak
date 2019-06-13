@@ -99,6 +99,16 @@ public class X509AuthenticatorConfigModel extends AuthenticatorConfigModel {
         return this;
     }
 
+    public long getCRLCacheTTL() {
+    	//Convert minutes in ms
+        return Long.parseLong(getConfig().get(CRL_CACHE_TTL)) * 60 * 1000;
+    }
+    
+    public X509AuthenticatorConfigModel setCRLEnabled(long ttl) {
+        getConfig().put(CRL_CACHE_TTL, Long.toString(ttl));
+        return this;
+    }
+    
     public boolean getOCSPEnabled() {
         return Boolean.parseBoolean(getConfig().get(ENABLE_OCSP));
     }

@@ -22,8 +22,8 @@ import java.security.cert.X509Certificate;
 import java.util.Enumeration;
 import java.util.LinkedList;
 import java.util.List;
-import javax.ws.rs.core.MultivaluedHashMap;
 
+import javax.ws.rs.core.MultivaluedHashMap;
 import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.core.Response;
 
@@ -31,12 +31,11 @@ import org.keycloak.authentication.AuthenticationFlowContext;
 import org.keycloak.authentication.authenticators.browser.AbstractUsernameFormAuthenticator;
 import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
-import org.keycloak.forms.login.LoginFormsPages;
 import org.keycloak.forms.login.LoginFormsProvider;
-import org.keycloak.forms.login.freemarker.Templates;
 import org.keycloak.models.ModelDuplicateException;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.utils.FormMessage;
+import org.keycloak.services.ServicesLogger;
 
 /**
  * @author <a href="mailto:pnalyvayko@agi.com">Peter Nalyvayko</a>
@@ -82,8 +81,8 @@ public class X509ClientCertificateAuthenticator extends AbstractX509ClientCertif
 
             // Validate X509 client certificate
             try {
-                CertificateValidator.CertificateValidatorBuilder builder = certificateValidationParameters(config);
-                CertificateValidator validator = builder.build(certs);
+                CertificateValidator.CertificateValidatorBuilder builder = certificateValidationParameters(config,context);
+                CertificateValidator validator = builder.build(certs, context);
                 validator.checkRevocationStatus()
                          .validateKeyUsage()
                          .validateExtendedKeyUsage();
@@ -117,7 +116,7 @@ public class X509ClientCertificateAuthenticator extends AbstractX509ClientCertif
                 user = getUserIdentityToModelMapper(config).find(context, userIdentity);
             }
             catch(ModelDuplicateException e) {
-                logger.modelDuplicateException(e);
+            	ServicesLogger.LOGGER.modelDuplicateException(e);
                 String errorMessage = "X509 certificate authentication's failed.";
                 // TODO is calling form().setErrors enough to show errors on login screen?
                 context.challenge(createErrorResponse(context, certs[0].getSubjectDN().getName(),

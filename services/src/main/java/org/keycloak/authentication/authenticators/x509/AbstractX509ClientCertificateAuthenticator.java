@@ -29,14 +29,17 @@ import javax.ws.rs.core.Response;
 import org.bouncycastle.asn1.x500.X500Name;
 import org.bouncycastle.asn1.x500.style.BCStyle;
 import org.bouncycastle.cert.jcajce.JcaX509CertificateHolder;
+import org.jboss.logging.Logger;
 import org.keycloak.authentication.AuthenticationFlowContext;
 import org.keycloak.authentication.Authenticator;
 import org.keycloak.events.Details;
+
+import org.keycloak.connections.httpclient.HttpClientProvider;
+
 import org.keycloak.forms.login.LoginFormsProvider;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
-import org.keycloak.services.ServicesLogger;
 import org.keycloak.services.x509.X509ClientCertificateLookup;
 
 /**
@@ -48,7 +51,8 @@ import org.keycloak.services.x509.X509ClientCertificateLookup;
 public abstract class AbstractX509ClientCertificateAuthenticator implements Authenticator {
 
     public static final String DEFAULT_ATTRIBUTE_NAME = "usercertificate";
-    protected static ServicesLogger logger = ServicesLogger.LOGGER;
+    
+    protected static Logger logger = Logger.getLogger(AbstractX509ClientCertificateAuthenticator.class);
 
     public static final String REGULAR_EXPRESSION = "x509-cert-auth.regular-expression";
     public static final String ENABLE_CRL = "x509-cert-auth.crl-checking-enabled";
@@ -56,6 +60,7 @@ public abstract class AbstractX509ClientCertificateAuthenticator implements Auth
     public static final String ENABLE_CRLDP = "x509-cert-auth.crldp-checking-enabled";
     public static final String CANONICAL_DN = "x509-cert-auth.canonical-dn-enabled";
     public static final String CRL_RELATIVE_PATH = "x509-cert-auth.crl-relative-path";
+    public static final String CRL_CACHE_TTL = "x509-cert-auth.crldp-local-cache-ttl";
     public static final String OCSPRESPONDER_URI = "x509-cert-auth.ocsp-responder-uri";
     public static final String OCSPRESPONDER_CERTIFICATE = "x509-cert-auth.ocsp-responder-certificate";
     public static final String MAPPING_SOURCE_SELECTION = "x509-cert-auth.mapping-source-selection";
@@ -85,9 +90,13 @@ public abstract class AbstractX509ClientCertificateAuthenticator implements Auth
 
     protected static class CertificateValidatorConfigBuilder {
 
-        static CertificateValidator.CertificateValidatorBuilder fromConfig(X509AuthenticatorConfigModel config) throws Exception {
+        static CertificateValidator.CertificateValidatorBuilder fromConfig(X509AuthenticatorConfigModel config, AuthenticationFlowContext context) throws Exception {
 
             CertificateValidator.CertificateValidatorBuilder builder = new CertificateValidator.CertificateValidatorBuilder();
+
+            builder.setHttpClient( context.getSession().getProvider(HttpClientProvider.class).getHttpClient() );
+            builder.setCRLTTL(config.getCRLCacheTTL());
+
             return builder
                     .keyUsage()
                         .parse(config.getKeyUsage())
@@ -104,8 +113,8 @@ public abstract class AbstractX509ClientCertificateAuthenticator implements Auth
     }
 
     // The method is purely for purposes of facilitating the unit testing
-    public CertificateValidator.CertificateValidatorBuilder certificateValidationParameters(X509AuthenticatorConfigModel config) throws Exception {
-        return CertificateValidatorConfigBuilder.fromConfig(config);
+    public CertificateValidator.CertificateValidatorBuilder certificateValidationParameters(X509AuthenticatorConfigModel config, AuthenticationFlowContext context) throws Exception {
+        return CertificateValidatorConfigBuilder.fromConfig(config,context);
     }
 
     protected static class UserIdentityExtractorBuilder {

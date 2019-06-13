@@ -27,38 +27,16 @@ import org.keycloak.Config;
 import org.keycloak.authentication.AuthenticatorFactory;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.provider.ProviderConfigProperty;
-import org.keycloak.services.ServicesLogger;
+import org.jboss.logging.Logger;
+
 
 import static org.keycloak.authentication.authenticators.x509.AbstractX509ClientCertificateAuthenticator.*;
-import static org.keycloak.authentication.authenticators.x509.AbstractX509ClientCertificateAuthenticator.CERTIFICATE_KEY_USAGE;
-import static org.keycloak.authentication.authenticators.x509.AbstractX509ClientCertificateAuthenticator.CONFIRMATION_PAGE_DISALLOWED;
-import static org.keycloak.authentication.authenticators.x509.AbstractX509ClientCertificateAuthenticator.CRL_RELATIVE_PATH;
-import static org.keycloak.authentication.authenticators.x509.AbstractX509ClientCertificateAuthenticator.CUSTOM_ATTRIBUTE_NAME;
-import static org.keycloak.authentication.authenticators.x509.AbstractX509ClientCertificateAuthenticator.DEFAULT_ATTRIBUTE_NAME;
-import static org.keycloak.authentication.authenticators.x509.AbstractX509ClientCertificateAuthenticator.DEFAULT_MATCH_ALL_EXPRESSION;
-import static org.keycloak.authentication.authenticators.x509.AbstractX509ClientCertificateAuthenticator.ENABLE_CRL;
-import static org.keycloak.authentication.authenticators.x509.AbstractX509ClientCertificateAuthenticator.ENABLE_CRLDP;
-import static org.keycloak.authentication.authenticators.x509.AbstractX509ClientCertificateAuthenticator.ENABLE_OCSP;
-import static org.keycloak.authentication.authenticators.x509.AbstractX509ClientCertificateAuthenticator.MAPPING_SOURCE_CERT_ISSUERDN;
-import static org.keycloak.authentication.authenticators.x509.AbstractX509ClientCertificateAuthenticator.MAPPING_SOURCE_CERT_ISSUERDN_CN;
-import static org.keycloak.authentication.authenticators.x509.AbstractX509ClientCertificateAuthenticator.MAPPING_SOURCE_CERT_ISSUERDN_EMAIL;
-import static org.keycloak.authentication.authenticators.x509.AbstractX509ClientCertificateAuthenticator.MAPPING_SOURCE_CERT_SERIALNUMBER;
-import static org.keycloak.authentication.authenticators.x509.AbstractX509ClientCertificateAuthenticator.MAPPING_SOURCE_CERT_SUBJECTALTNAME_EMAIL;
-import static org.keycloak.authentication.authenticators.x509.AbstractX509ClientCertificateAuthenticator.MAPPING_SOURCE_CERT_SUBJECTALTNAME_OTHERNAME;
-import static org.keycloak.authentication.authenticators.x509.AbstractX509ClientCertificateAuthenticator.MAPPING_SOURCE_CERT_SUBJECTDN;
-import static org.keycloak.authentication.authenticators.x509.AbstractX509ClientCertificateAuthenticator.MAPPING_SOURCE_CERT_SUBJECTDN_CN;
-import static org.keycloak.authentication.authenticators.x509.AbstractX509ClientCertificateAuthenticator.MAPPING_SOURCE_CERT_SUBJECTDN_EMAIL;
-import static org.keycloak.authentication.authenticators.x509.AbstractX509ClientCertificateAuthenticator.MAPPING_SOURCE_SELECTION;
-import static org.keycloak.authentication.authenticators.x509.AbstractX509ClientCertificateAuthenticator.OCSPRESPONDER_CERTIFICATE;
-import static org.keycloak.authentication.authenticators.x509.AbstractX509ClientCertificateAuthenticator.OCSPRESPONDER_URI;
-import static org.keycloak.authentication.authenticators.x509.AbstractX509ClientCertificateAuthenticator.REGULAR_EXPRESSION;
-import static org.keycloak.authentication.authenticators.x509.AbstractX509ClientCertificateAuthenticator.USERNAME_EMAIL_MAPPER;
-import static org.keycloak.authentication.authenticators.x509.AbstractX509ClientCertificateAuthenticator.USER_ATTRIBUTE_MAPPER;
-import static org.keycloak.authentication.authenticators.x509.AbstractX509ClientCertificateAuthenticator.USER_MAPPER_SELECTION;
+
 import static org.keycloak.provider.ProviderConfigProperty.BOOLEAN_TYPE;
 import static org.keycloak.provider.ProviderConfigProperty.MULTIVALUED_STRING_TYPE;
 import static org.keycloak.provider.ProviderConfigProperty.STRING_TYPE;
 import static org.keycloak.provider.ProviderConfigProperty.TEXT_TYPE;
+
 
 /**
  * @author <a href="mailto:brat000012001@gmail.com">Peter Nalyvayko</a>
@@ -68,7 +46,7 @@ import static org.keycloak.provider.ProviderConfigProperty.TEXT_TYPE;
 
 public abstract class AbstractX509ClientCertificateAuthenticatorFactory implements AuthenticatorFactory {
 
-    protected static ServicesLogger logger = ServicesLogger.LOGGER;
+    protected static Logger logger = Logger.getLogger(AbstractX509ClientCertificateAuthenticatorFactory.class);
 
     private static final String[] mappingSources = {
             MAPPING_SOURCE_CERT_SUBJECTDN,
@@ -149,6 +127,12 @@ public abstract class AbstractX509ClientCertificateAuthenticatorFactory implemen
         crlDPEnabled.setHelpText("CRL Distribution Point is a starting point for CRL. If this is ON, then CRL checking will be done based on the CRL distribution points included" +
                 " in the checked certificates. CDP is optional, but most PKI authorities include CDP in their certificates.");
 
+        ProviderConfigProperty crlDPCacheTtl = new ProviderConfigProperty();
+        crlDPCacheTtl.setType(STRING_TYPE);
+        crlDPCacheTtl.setName(CRL_CACHE_TTL);
+        crlDPCacheTtl.setLabel("CRL Cache TTL");
+        crlDPCacheTtl.setHelpText("Set the CRL  cache time to live (TTL), in minutes. When CDP is used, CRL are downloaded and stored in a local memory cache.");
+        
         ProviderConfigProperty cRLRelativePath = new ProviderConfigProperty();
         cRLRelativePath.setType(MULTIVALUED_STRING_TYPE);
         cRLRelativePath.setName(CRL_RELATIVE_PATH);
@@ -202,6 +186,7 @@ public abstract class AbstractX509ClientCertificateAuthenticatorFactory implemen
                 attributeOrPropertyValue,
                 crlCheckingEnabled,
                 crlDPEnabled,
+                crlDPCacheTtl,
                 cRLRelativePath,
                 oCspCheckingEnabled,
                 ocspResponderUri,

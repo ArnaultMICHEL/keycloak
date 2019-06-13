@@ -28,7 +28,6 @@ import org.bouncycastle.asn1.DERUTF8String;
 import org.bouncycastle.asn1.x500.RDN;
 import org.bouncycastle.asn1.x500.X500Name;
 import org.bouncycastle.asn1.x500.style.IETFUtils;
-import org.keycloak.services.ServicesLogger;
 
 import java.io.ByteArrayInputStream;
 import java.security.cert.CertificateParsingException;
@@ -40,6 +39,8 @@ import java.util.function.Function;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import org.jboss.logging.Logger;
+
 /**
  * @author <a href="mailto:pnalyvayko@agi.com">Peter Nalyvayko</a>
  * @version $Revision: 1 $
@@ -48,7 +49,7 @@ import java.util.regex.Pattern;
 
 public abstract class UserIdentityExtractor {
 
-    private static final ServicesLogger logger = ServicesLogger.LOGGER;
+    private static final Logger logger = Logger.getLogger(UserIdentityExtractor.class);
 
     public abstract Object extractUserIdentity(X509Certificate[] certs);
 
